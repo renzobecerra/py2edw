@@ -1,4 +1,5 @@
 import mysql.connector
+import sshtunnel
 import pandas
 
 class py2edw:
@@ -82,7 +83,7 @@ class py2edw:
             df_list = []
             for i in self.cursor:
                 df_list.append(i)
-            df = pd.DataFrame(df_list, columns=list(self.cursor.column_names))
+            df = pandas.DataFrame(df_list, columns=list(self.cursor.column_names))
             return df
         except mysql.connector.Error as e:
             print(e)
@@ -94,7 +95,7 @@ class py2edw:
             df_list = []
             for i in self.cursor:
                 df_list.append(i)
-            df = pd.DataFrame(df_list, columns=list(self.cursor.column_names))
+            df = pandas.DataFrame(df_list, columns=list(self.cursor.column_names))
             return df
         except mysql.connector.Error as e:
             print(e)
