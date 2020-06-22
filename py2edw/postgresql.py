@@ -4,13 +4,40 @@ from psycopg2.extras import execute_values
 import sshtunnel
 import pandas
 
-# py2edw
 class py2edw:
+    """
+    pgsql connector
+    """
     def __init__(self, db_params, ssh_params=False):
         self.ssh_params = ssh_params
         self.db_params = db_params
+        # convert strings to int
+        self.ssh_params['ssh_port'] = int(self.ssh_params['ssh_port'])
+        self.ssh_params['remote_bind_port'] = int(self.ssh_params['remote_bind_port'])
+        # autoconnection
+        self.autoconnection = True
+    
+    def _autoconn(foo):
+        """
+        decorator open/close connection wrap
+        """
+        def conn(self, *method_args, **method_kwargs):
+            if self.autoconnection == True:
+                try:
+                    self.start_connection()
+                    var = foo(self, *method_args, **method_kwargs)
+                    self.close_connection()
+                    return var
+                except:
+                    return error
+            else:
+                foo(self, *method_args, **method_kwargs)
+        return conn
     
     def help(self):
+        """
+        print help method to console
+        """
         print("Avaliable Commands:")
         print("")
         print("close_connection()")
@@ -37,18 +64,25 @@ class py2edw:
         print("")
         
     def close_connection(self):
-        #close conn and cursor
+        """
+        close conn, cursor and ssh connection
+        """
         if self.ssh_params == False:
             self.cursor.close()
             self.connection.close()
-            print("py2edw: Connection Closed Successfully")
+            if self.autoconnection == False:
+                    print("py2edw: Connection Closed Successfully")
         else:
             self.cursor.close()
             self.connection.close()
             self.server.stop()
-            print("py2edw: Connection Closed Successfully")
+            if self.autoconnection == False:
+                    print("py2edw: Connection Closed Successfully")
         
     def start_connection(self):
+        """
+        start conn, cursor and ssh connection
+        """
         if self.ssh_params == False:
             try:
                 # establish connection
@@ -57,7 +91,8 @@ class py2edw:
                 self.connection.autocommit = True
                 # establish cursor   
                 self.cursor = self.connection.cursor()
-                print("py2edw connection established")
+                if self.autoconnection == False:
+                    print("py2edw: Connection Established")
             except:
                 print("connection error")
             
@@ -79,10 +114,12 @@ class py2edw:
                 self.connection.autocommit = True
                 # establish cursor   
                 self.cursor = self.connection.cursor()
-                print("py2edw connection established")
+                if self.autoconnection == False:
+                    print("py2edw: Connection Established")
             except:
                 print("connection error")
     
+    @_autoconn
     def show_tables(self):
         try:
             self.cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
@@ -108,8 +145,8 @@ class py2edw:
         s += ")"
         return(s)
     
-    # py2edw functions
     
+    @_autoconn
     def sql_query(self, sql_query):
         create_table_command = sql_query
         try:
@@ -118,6 +155,7 @@ class py2edw:
         except psycopg2.Error as e:
             print(e)
     
+    @_autoconn
     def insert_DataFrame(self, table_name, df):
         sql_q = "INSERT INTO "+str(table_name)+" "+ self.getCols(df)+ " VALUES %s"
         try:
@@ -125,13 +163,15 @@ class py2edw:
             print("Query Successful")
         except psycopg2.Error as e:
             print(e)
-        
+    
+    @_autoconn    
     def import_DataFrame(self, sql_query):
         self.cursor.execute(sql_query)
         colnames = [desc[0] for desc in self.cursor.description]
         data = self.cursor.fetchall()
         return(pandas.DataFrame(data, columns=colnames))
-        
+    
+    @_autoconn    
     def upsert_DataFrame(self, table_name, df, conflictCol, whereStatement):
         if whereStatement == False:
             whereStatement = ""
