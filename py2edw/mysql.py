@@ -9,10 +9,6 @@ class py2edw:
     def __init__(self, db_params, ssh_params=False):
         self.db_params = db_params
         self.ssh_params = ssh_params
-        # convert strings to int
-        if self.ssh_params != False:
-            self.ssh_params['ssh_port'] = int(self.ssh_params['ssh_port'])
-            self.ssh_params['remote_bind_port'] = int(self.ssh_params['remote_bind_port'])
         # autoconnection
         self.autoconnection = True
         
@@ -95,6 +91,9 @@ class py2edw:
                 print(e)
         else:
             try:
+                # convert strings to int
+                self.ssh_params['ssh_port'] = int(self.ssh_params['ssh_port'])
+                self.ssh_params['remote_bind_port'] = int(self.ssh_params['remote_bind_port'])
                 # SSH Tunnel
                 self.server = sshtunnel.SSHTunnelForwarder(
                         (self.ssh_params['ssh_ip'], self.ssh_params['ssh_port']), #Remote server IP and SSH port
