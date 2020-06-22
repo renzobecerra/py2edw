@@ -12,11 +12,9 @@ class py2edw:
         self.ssh_params = ssh_params
         self.db_params = db_params
         # convert strings to int
-        try:
+        if self.ssh_params != False:
             self.ssh_params['ssh_port'] = int(self.ssh_params['ssh_port'])
             self.ssh_params['remote_bind_port'] = int(self.ssh_params['remote_bind_port'])
-        except:
-            pass
         # autoconnection
         self.autoconnection = True
     
