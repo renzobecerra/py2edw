@@ -37,6 +37,12 @@ class py2edw:
         """
         print("Avaliable Commands:")
         print("")
+        print("Connection Parameters:")
+        print("")
+        print("""py2edw = postgresql.py2edw(db_params = {"database": <db_name>, "user": <username>, "password": <password>, "host": <host>}, 
+        ssh_params = {"ssh_ip": <ip_address>, "ssh_port": <port>, "ssh_username": <username>, "ssh_password": <password>,
+         "remote_bind_ip": <local_ip>, "remote_bind_port": <local_port>})""")
+        print("")
         print("close_connection()")
         print("example: py2edw.close_connection()")
         print("")
@@ -120,9 +126,25 @@ class py2edw:
                 print("connection error")
     
     @_autoconn
-    def show_tables(self):
+    def show_tables(self, schema_name=False):
+        if schema_name:
+            schema_var = 'WHERE table_schema = ' + schema_name
+        else:
+            schema_var = ''
         try:
-            self.cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+            self.cursor.execute("SELECT table_name FROM information_schema.tables '{schema_var}';".format(schema_var=schema_var))
+            tables = self.cursor.fetchall()
+            data = []
+            for i in tables:
+                data.append(i[0])
+            return(data)
+        except psycopg2.Error as e:
+            print(e)
+
+    @_autoconn
+    def show_schema(self):
+        try:
+            self.cursor.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT LIKE 'pg_%' AND schema_name NOT LIKE 'information_schema';")
             tables = self.cursor.fetchall()
             data = []
             for i in tables:
